@@ -34,7 +34,7 @@ import {
   type Chain,        // チェーン型
   type Hex,          // 16進数文字列型
 } from "viem";
-import { baseSepolia, sepolia } from "viem/chains";  // テストネットチェーン定義
+import { baseSepolia } from "viem/chains";  // テストネットチェーン定義
 import { privateKeyToAccount } from "viem/accounts";   // 秘密鍵からアカウント生成
 import { readContract } from "viem/actions";          // コントラクト読み取り用
 
@@ -112,14 +112,6 @@ const gasTankConfigurations: GasTankConfiguration[] = [
     rpcUrl: baseSepolia.rpcUrls.default.http[0],            // デフォルトRPC URL
     privateKey,                                              // 上で定義した秘密鍵を使用
   },
-  // Sepoliaテストネット用ガスタンク
-  {
-    tokenAddress: testnetMcUSDC.addressOn(sepolia.id),      // SepoliaのテストUSDCアドレス
-    chain: sepolia,                                          // Sepoliaチェーン
-    amountToDeposit: parseUnits("5", 6),                    // 初期デポジット: 5 USDC（6桁の小数点）
-    rpcUrl: sepolia.rpcUrls.default.http[0],                // デフォルトRPC URL
-    privateKey,                                              // 上で定義した秘密鍵を使用
-  },
 ];
 
 // ==================== ガスタンク初期化処理 ====================
@@ -138,16 +130,6 @@ const gasTankConfigurations: GasTankConfiguration[] = [
 const initializeSponsorship = async (
   gasTankConfigs: GasTankConfiguration[]
 ) => {
-  // MEE APIの設定オプション
-  // 環境変数 MEE_API_KEY から読み込みます（オプショナル）
-  // 未設定の場合、レート制限付きのデフォルトキーが使用されます
-  const options = process.env.MEE_API_KEY
-    ? {
-        mee: {
-          apiKey: process.env.MEE_API_KEY,
-        },
-      }
-    : {};
 
   // 各ガスタンク設定を順番に処理
   for (const gasTankConfig of gasTankConfigs) {
@@ -160,7 +142,11 @@ const initializeSponsorship = async (
       transport: http(rpcUrl),  // HTTPトランスポートでRPCに接続
       chain,                     // 対象チェーン
       privateKey,                // オーナーの秘密鍵
-      options,                   // MEE APIオプション
+      options: {
+        mee: {
+          apiKey: process.env.MEE_API_KEY,
+        }
+      },
     });
 
     // ガスタンクアカウントのアドレスを取得

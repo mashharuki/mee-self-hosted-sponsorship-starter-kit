@@ -435,6 +435,12 @@ docker-compose up -d
 # ログを確認
 docker-compose logs -f
 
+# コンテナを確認
+docker ps
+
+# コンテナイメージを確認
+docker image ls
+
 # 停止
 docker-compose down
 ```
