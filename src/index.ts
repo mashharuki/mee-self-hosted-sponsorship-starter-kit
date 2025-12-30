@@ -1,9 +1,12 @@
 /**
  * MEEスタック向けセルフホスティングマルチチェーンガススポンサーシップサービス
- * 
+ *
  * このサーバーは、Biconomy AbstractJSを使用して、複数のブロックチェーンネットワークで
  * ユーザーのガス代を代理支払い（スポンサー）するためのREST APIを提供します。
  */
+
+// 環境変数の読み込み（.envファイル）
+import "dotenv/config";
 
 // Express.jsのインポート（REST APIサーバー構築用）
 import express, { type Request, type Response } from "express";
@@ -85,10 +88,15 @@ const gasTanks = new Map<number, GasTank[]>();
 
 /**
  * EOA（外部所有アカウント）の秘密鍵
- * ⚠️ 重要: 本番環境では環境変数や暗号化されたストレージを使用してください
+ * 環境変数 PRIVATE_KEY から読み込みます
  * この秘密鍵を持つアカウントがガスタンクをデプロイ・管理します。
  */
-const privateKey = "CONFIG_YOUR_PK_HERE" as Hex;
+if (!process.env.PRIVATE_KEY) {
+  throw new Error(
+    "PRIVATE_KEY environment variable is not set. Please configure it in .env file."
+  );
+}
+const privateKey = process.env.PRIVATE_KEY as Hex;
 
 /**
  * ガスタンク初期化設定リスト
@@ -118,26 +126,28 @@ const gasTankConfigurations: GasTankConfiguration[] = [
 
 /**
  * スポンサーシップガスタンクの初期化
- * 
+ *
  * 設定に基づいて全てのガスタンクを初期化します。
  * - ガスタンクアカウントの作成
  * - 既存のガスタンクチェック（重複防止）
  * - 未デプロイの場合は自動デプロイ
  * - メモリストレージへの登録
- * 
+ *
  * @param gasTankConfigs - ガスタンク設定の配列
  */
 const initializeSponsorship = async (
   gasTankConfigs: GasTankConfiguration[]
 ) => {
   // MEE APIの設定オプション
-  const options = {
-    mee: {
-      // ⚠️ 本番環境では必ずAPIキーを設定してください
-      // 未設定の場合、レート制限付きのデフォルトキーが使用されます
-      apiKey: "ADD_YOUR_MEE_PROJECT_API_KEY_HERE",
-    },
-  };
+  // 環境変数 MEE_API_KEY から読み込みます（オプショナル）
+  // 未設定の場合、レート制限付きのデフォルトキーが使用されます
+  const options = process.env.MEE_API_KEY
+    ? {
+        mee: {
+          apiKey: process.env.MEE_API_KEY,
+        },
+      }
+    : {};
 
   // 各ガスタンク設定を順番に処理
   for (const gasTankConfig of gasTankConfigs) {
@@ -276,12 +286,12 @@ app.use("/v1", router);           // 全エンドポイントに /v1 プレフ�
 
 /**
  * GET /v1/sponsorship/info
- * 
+ *
  * 全ガスタンクの情報を取得
  * - 各チェーンのガスタンク一覧
  * - トークン残高
  * - アドレス情報
- * 
+ *
  * レスポンス例:
  * {
  *   "84532": [{ chainId, token: { address, balance, decimals }, gasTankAddress }],
@@ -332,15 +342,15 @@ router.get("/sponsorship/info", async (req: Request, res: Response) => {
 
 /**
  * GET /v1/sponsorship/nonce/:chainId/:gasTankAddress
- * 
+ *
  * 特定のガスタンクアカウントの現在のnonceを取得
- * 
+ *
  * パラメータ:
  * - chainId: チェーンID（例: 84532）
  * - gasTankAddress: ガスタンクアドレス
- * 
+ *
  * レスポンス: { nonceKey: string, nonce: string }
- * 
+ *
  * nonceはトランザクションの順序管理に使用されます。
  */
 router.get(
@@ -482,7 +492,7 @@ router.post(
 
 /**
  * グローバルエラーハンドラー
- * 
+ *
  * 全ての未処理エラーをキャッチして、統一されたエラーレスポンスを返します。
  * MEEスタックとの互換性を保つため、エラーレスポンス形式を統一。
  */
@@ -496,7 +506,7 @@ app.use((err: Error, request: Request, response: Response, next: any) => {
 
 /**
  * Expressサーバーの起動
- * 
+ *
  * デフォルトポート: 3004
  * 環境変数PORTで変更可能
  */

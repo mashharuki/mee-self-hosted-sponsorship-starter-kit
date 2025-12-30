@@ -13,30 +13,21 @@ services:
       context: .
       dockerfile: Dockerfile
       target: production
-    
+
     # コンテナ名
     container_name: mee-sponsorship-service
-    
+
     # ポートマッピング（ホスト:コンテナ）
     ports:
       - "3004:3004"
-    
-    # 環境変数の設定
-    # ⚠️ 本番環境では.envファイルや暗号化された環境変数を使用してください
-    environment:
-      - NODE_ENV=production
-      - PORT=3004
-      # 以下の値は必ず実際の値に置き換えてください
-      # - PRIVATE_KEY=your_private_key_here
-      # - MEE_API_KEY=your_mee_api_key_here
-    
+
     # 環境変数ファイルから読み込む場合（推奨）
-    # env_file:
-    #   - .env
-    
+    env_file:
+      - .env
+
     # 再起動ポリシー
     restart: unless-stopped
-    
+
     # ヘルスチェック
     healthcheck:
       test: ["CMD", "bun", "-e", "fetch('http://localhost:3004/v1/sponsorship/info').then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))"]
@@ -44,7 +35,7 @@ services:
       timeout: 3s
       start_period: 10s
       retries: 3
-    
+
     # リソース制限（任意）
     # deploy:
     #   resources:

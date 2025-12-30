@@ -4,6 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "dev": "bun run src/index.ts",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
@@ -19,6 +20,7 @@
   },
   "dependencies": {
     "@biconomy/abstractjs": "^1.0.18",
+    "dotenv": "^16.4.5",
     "express": "^5.1.0",
     "viem": "^2.31.3"
   }
