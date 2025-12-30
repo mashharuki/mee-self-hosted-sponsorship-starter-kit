@@ -1,0 +1,57 @@
+{
+  "name": "Mee Self-Hosted Sponsorship API",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/git:1": {
+      "version": "latest"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "biomejs.biome",
+        "esbenp.prettier-vscode",
+        "firsttris.vscode-jest-runner",
+        "eamodio.gitlens",
+        "dbaeumer.vscode-eslint",
+        "ms-azuretools.vscode-docker"
+      ],
+      "settings": {
+        "[typescript]": {
+          "editor.defaultFormatter": "biomejs.biome",
+          "editor.formatOnSave": true,
+          "editor.codeActionsOnSave": {
+            "quickfix.biome": "explicit",
+            "source.organizeImports.biome": "explicit"
+          }
+        },
+        "[json]": {
+          "editor.defaultFormatter": "biomejs.biome",
+          "editor.formatOnSave": true
+        },
+        "editor.formatOnSave": true,
+        "editor.rulers": [80, 120],
+        "files.watcherExclude": {
+          "**/.git/objects/**": true,
+          "**/.git/subtree-cache/**": true,
+          "**/node_modules/**": true,
+          "**/dist/**": true
+        }
+      }
+    }
+  },
+  "postCreateCommand": "chmod +x .devcontainer/post-create.sh && .devcontainer/post-create.sh",
+  "remoteUser": "root",
+  "forwardPorts": [3000, 8000],
+  "portsAttributes": {
+    "3000": {
+      "label": "Application",
+      "onAutoForward": "notify"
+    },
+    "8000": {
+      "label": "API",
+      "onAutoForward": "notify"
+    }
+  }
+}
