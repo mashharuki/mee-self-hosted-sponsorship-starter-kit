@@ -378,18 +378,34 @@ router.get(
   }
 );
 
-// Endpoint to get the transaction receipt for a sponsorship transaction
+/**
+ * GET /v1/sponsorship/receipt/:chainId/:hash
+ *
+ * スポンサーシップトランザクションのレシート（実行結果）を取得
+ *
+ * パラメータ:
+ * - chainId: チェーンID（例: 84532）
+ * - hash: トランザクションハッシュ（0xで始まる16進数文字列）
+ *
+ * レスポンス: トランザクションレシート（JSON形式）
+ * - status: 成功/失敗ステータス
+ * - blockNumber: ブロック番号
+ * - gasUsed: 使用されたガス量
+ * - その他トランザクション詳細情報
+ */
 router.get(
   "/sponsorship/receipt/:chainId/:hash",
   async (req: Request, res: Response) => {
     try {
       const { hash, chainId } = req.params;
 
+      // パラメータのバリデーション
       if (!chainId) throw new Error("Invalid chain id");
 
       if (!hash || !isHash(hash)) throw new Error("Invalid transaction hash");
 
-      // Get the first gas tank for the given chain (assumes one per chain)
+      // 指定されたチェーンのガスタンクを取得
+      // （このエンドポイントでは各チェーンに1つのガスタンクを想定）
       const existingGasTanks = gasTanks.get(Number(chainId)) || [];
 
       if (existingGasTanks.length <= 0) throw new Error("No gas tanks found");
@@ -398,12 +414,14 @@ router.get(
 
       if (!gasTank) throw new Error("Gas tank not found");
 
-      // Fetch the transaction receipt from the public client
+      // ブロックチェーンからトランザクションレシートを取得
+      // レシートにはトランザクションの実行結果が含まれます
       const receipt =
         await gasTank.gasTankAccount.publicClient.getTransactionReceipt({
           hash,
         });
 
+      // JSONとしてレシート情報を返却
       res.setHeader("Content-Type", "application/json");
       res.send(stringify(receipt));
     } catch (error) {
@@ -418,21 +436,43 @@ router.get(
   }
 );
 
-// Endpoint to sign a sponsorship quote using a gas tank account
+/**
+ * POST /v1/sponsorship/sign/:chainId/:gasTankAddress
+ *
+ * スポンサーシップ見積もりに署名する（ガス代支払いを承認）
+ *
+ * このエンドポイントはMEEスタックの中核機能です。
+ * クライアントから送られた見積もり（quote）に対して、ガスタンクオーナーが
+ * 署名することで、そのトランザクションのガス代をスポンサーすることを承認します。
+ *
+ * パラメータ:
+ * - chainId: チェーンID
+ * - gasTankAddress: 使用するガスタンクのアドレス
+ *
+ * リクエストボディ: GetQuotePayload（見積もり情報）
+ * - paymentInfo: 支払い情報（トークン、金額等）
+ * - その他のトランザクション詳細
+ *
+ * レスポンス: 署名済み見積もり（GetQuotePayload）
+ * - 元の見積もり情報 + スポンサーの署名
+ * - この署名済み見積もりをクライアントがトランザクション実行に使用
+ */
 router.post(
   "/sponsorship/sign/:chainId/:gasTankAddress",
   async (req: Request, res: Response) => {
     try {
       const { chainId, gasTankAddress } = req.params;
 
+      // リクエストボディから見積もり情報を取得
       const quote = req.body as GetQuotePayload;
 
+      // パラメータのバリデーション
       if (!chainId) throw new Error("Invalid chain id");
 
       if (!gasTankAddress || !isAddress(gasTankAddress))
         throw new Error("Invalid gas tank address");
 
-      // Find the gas tank for the given chain and address
+      // 指定されたチェーンとアドレスのガスタンクを検索
       const existingGasTanks = gasTanks.get(Number(chainId)) || [];
 
       const [gasTank] = existingGasTanks.filter(
@@ -442,6 +482,8 @@ router.post(
 
       if (!gasTank) throw new Error("Gas tank not found");
 
+      // トークンアドレスの検証
+      // 見積もりで指定されたトークンが、このガスタンクでサポートされているか確認
       if (
         quote.paymentInfo.token.toLowerCase() !==
         gasTank.tokenAddress.toLowerCase()
@@ -449,24 +491,33 @@ router.post(
         throw new Error("Sponsorship token not supported.");
       }
 
-      // Project verification step: Here you can add logic to verify that the sponsorship request
-      // is coming from an authorized or valid project. This may involve checking an API key,
-      // validating a project ID, or performing other authentication/authorization checks.
+      // ========== プロジェクト検証ステップ ==========
+      // ここで、スポンサーシップリクエストが認証されたプロジェクトからのものか検証できます。
+      //
+      // 実装例:
+      // - APIキーの検証
+      // - プロジェクトIDの確認
+      // - 月間支出上限のチェック
+      // - トランザクション毎の最大スポンサー金額の制限
+      // - ホワイトリスト/ブラックリストの確認
+      // - レート制限（Rate Limiting）
+      //
+      // ビジネスルールに応じてカスタム検証ロジックを追加してください。
+      // ========================================
 
-      // Custom validation logic can be added here if needed.
-      // For example, you may want to check the monthly spending limits, max spend per transaction,
-      // or enforce business rules before signing.
-
-      // Sign the sponsorship quote using the gas tank account
+      // ガスタンクアカウントで見積もりに署名
+      // この署名により、このトランザクションのガス代をスポンサーすることを承認します
       const sponsorshipSignedQuote: GetQuotePayload =
         await gasTank.gasTankAccount.signSponsorship({ quote });
 
+      // 署名済み見積もりをクライアントに返却
+      // クライアントはこれを使ってトランザクションを実行できます
       res.json(sponsorshipSignedQuote);
     } catch (error) {
       const errorMessage =
         error instanceof Error
           ? error.message
-          : "Failed to fetch transaction receipt";
+          : "Failed to sign sponsorship quote";
       res.status(400).json({
         errors: [errorMessage],
       });

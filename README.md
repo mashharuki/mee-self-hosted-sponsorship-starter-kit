@@ -407,6 +407,24 @@ PRIVATE_KEY=0xあなたの秘密鍵をここに設定
 
 # ⚠️ 推奨: MEE API キー（本番環境では必須）
 MEE_API_KEY=あなたの MEE API キーをここに設定
+
+# ==================== トークン設定 ====================
+# Base Sepolia USDC アドレス（デフォルト）
+TOKEN_ADDRESS=0x036CbD53842c5426634e7929541eC2318f3dCF7e
+TOKEN_DECIMALS=6
+
+# ==================== CLIユーティリティ設定 ====================
+# create-gas-tank: 初期入金額（デフォルト: 0.1 USDC）
+INITIAL_DEPOSIT=0.1
+
+# deposit-gas-tank: 入金額（デフォルト: 1.0 USDC）
+DEPOSIT_AMOUNT=1.0
+
+# withdraw-gas-tank: 引き出し設定
+WITHDRAW_AMOUNT=0.5        # 引き出し額（デフォルト: 0.5 USDC）
+WITHDRAW_ALL=false         # 全額引き出しフラグ
+# RECIPIENT_ADDRESS=0x...  # 受取先（デフォルト: EOA）
+CONFIRMATIONS=3            # ブロック確認数（デフォルト: 3）
 ```
 
 ⚠️ **セキュリティ警告**:
@@ -492,11 +510,13 @@ curl http://localhost:3004/v1/sponsorship/nonce/84532/0xYourGasTankAddress
 ### 🛠️ 開発コマンド
 
 ```bash
-# 開発サーバー起動（ホットリロード)
+# 開発サーバー起動（ホットリロード）
 bun run dev
 
-# ガスタンク管理ユーティリティスクリプトを実行
-bun run gas-tank
+# ガスタンク管理CLIユーティリティ
+bun run create-gas-tank     # ガスタンク作成・デプロイ
+bun run deposit-gas-tank    # ガスタンクに入金
+bun run withdraw-gas-tank   # ガスタンクから引き出し
 
 # コードのリント
 bun run lint
@@ -653,8 +673,9 @@ WITHDRAW_ALL=true RECIPIENT_ADDRESS=0x... bun run withdraw-gas-tank
 #### withdraw-gas-tank.ts
 - ガスタンクから指定アドレスへ引き出し
 - 全額引き出しモードをサポート
-- 3ブロックの確認を待機
+- デフォルトで3ブロックの確認を待機（`CONFIRMATIONS`環境変数で変更可能）
 - 引き出し前後の残高を表示
+- デフォルトの受取先はEOAアドレス（`RECIPIENT_ADDRESS`環境変数で変更可能）
 
 ### 🔐 セキュリティ注意事項
 
@@ -662,6 +683,34 @@ WITHDRAW_ALL=true RECIPIENT_ADDRESS=0x... bun run withdraw-gas-tank
 - 本番環境での実行前に、テストネットで十分にテストしてください
 - 引き出し操作は不可逆的です。実行前にアドレスと金額を必ず確認してください
 - 秘密鍵は絶対に公開しないでください
+
+### 🔧 設定可能な環境変数
+
+#### 共通設定
+```bash
+PRIVATE_KEY=0x...        # EOAの秘密鍵（必須）
+MEE_API_KEY=...          # Biconomy MEE APIキー（必須）
+TOKEN_ADDRESS=0x...      # トークンコントラクトアドレス
+TOKEN_DECIMALS=6         # トークンの小数点桁数（デフォルト: 6）
+```
+
+#### create-gas-tank.ts
+```bash
+INITIAL_DEPOSIT=0.1      # 初期入金額（デフォルト: 0.1 USDC）
+```
+
+#### deposit-gas-tank.ts
+```bash
+DEPOSIT_AMOUNT=1.0       # 入金額（デフォルト: 1.0 USDC）
+```
+
+#### withdraw-gas-tank.ts
+```bash
+WITHDRAW_AMOUNT=0.5      # 引き出し額（デフォルト: 0.5 USDC）
+WITHDRAW_ALL=false       # 全額引き出しフラグ（デフォルト: false）
+RECIPIENT_ADDRESS=0x...  # 受取先アドレス（デフォルト: EOAアドレス）
+CONFIRMATIONS=3          # 待機するブロック確認数（デフォルト: 3）
+```
 
 ## 🔒 セキュリティのベストプラクティス
 
@@ -797,20 +846,24 @@ bun run lint
 ```
 mee-self-hosted-sponsorship-starter-kit/
 ├── src/
-│   └── index.ts                    # メインアプリケーション
+│   ├── index.ts                    # メインアプリケーション（REST APIサーバー）
+│   └── gas-tank/
+│       ├── create-gas-tank.ts      # ガスタンク作成・デプロイCLI
+│       ├── deposit-gas-tank.ts     # ガスタンク入金CLI
+│       └── withdraw-gas-tank.ts    # ガスタンク引き出しCLI
 ├── .vscode/
 │   ├── extensions.json             # 推奨 VS Code 拡張機能
 │   └── settings.json               # VS Code プロジェクト設定
-├── biome.json                      # Biome 設定
+├── biome.json                      # Biome 設定（リンター・フォーマッター）
 ├── Dockerfile                      # Docker イメージ定義
 ├── docker-compose.yml              # Docker Compose 設定
 ├── openapi.yaml                    # OpenAPI 3.0 API 仕様書
 ├── sample.http                     # REST Client テストファイル
 ├── .env.example                    # 環境変数テンプレート
 ├── .env                           # 環境変数（Git 除外）
-├── package.json                    # プロジェクト定義
+├── package.json                    # プロジェクト定義・スクリプト
 ├── tsconfig.json                   # TypeScript 設定
-└── README.md                       # このファイル
+└── README.md                       # このファイル（日本語ドキュメント）
 ```
 
 ---
