@@ -1,0 +1,235 @@
+###############################################################################
+# MEE Self-Hosted Sponsorship API - サンプルリクエスト集
+###############################################################################
+# 
+# このファイルはVS Code REST Client拡張機能で使用できます
+# インストール: https://marketplace.visualstudio.com/items?itemName=humao.rest-client
+#
+# 使い方:
+# 1. 各リクエストの上にある "Send Request" をクリック
+# 2. または Ctrl+Alt+R (Windows/Linux) / Cmd+Alt+R (Mac) で実行
+#
+# 注意: 
+# - {{baseUrl}}, {{chainId}} などの変数は実際の値に置き換えてください
+# - エンドポイントを実行する前にサーバーが起動していることを確認してください
+
+###############################################################################
+# 変数定義
+###############################################################################
+
+@baseUrl = http://localhost:3004/v1
+@baseSepolia_chainId = 84532
+@sepolia_chainId = 11155111
+
+# ⚠️ 以下の値は実際の値に置き換えてください
+@gasTankAddress = 0x1234567890123456789012345678901234567890
+@transactionHash = 0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890
+
+###############################################################################
+# 1. ガスタンク情報の取得
+###############################################################################
+# 
+# 説明: 全チェーンの全ガスタンク情報を取得
+# - 各ガスタンクのアドレス
+# - トークン残高
+# - トークン情報（アドレス、小数点桁数）
+#
+# レスポンス例:
+# {
+#   "84532": [{
+#     "chainId": 84532,
+#     "token": {
+#       "address": "0x...",
+#       "balance": "5.0",
+#       "decimals": 6
+#     },
+#     "gasTankAddress": "0x..."
+#   }],
+#   "11155111": [...]
+# }
+
+### すべてのガスタンク情報を取得
+GET {{baseUrl}}/sponsorship/info
+Content-Type: application/json
+
+###############################################################################
+# 2. Nonce（トランザクション番号）の取得
+###############################################################################
+#
+# 説明: 特定のガスタンクアカウントの現在のnonceを取得
+# - トランザクションの順序管理に使用
+# - 各トランザクションには一意のnonceが必要
+#
+# パラメータ:
+# - chainId: チェーンID (84532 = Base Sepolia, 11155111 = Sepolia)
+# - gasTankAddress: ガスタンクのアドレス
+#
+# レスポンス例:
+# {
+#   "nonceKey": "123",
+#   "nonce": "5"
+# }
+
+### Base Sepoliaのnonce取得
+GET {{baseUrl}}/sponsorship/nonce/{{baseSepolia_chainId}}/{{gasTankAddress}}
+Content-Type: application/json
+
+###
+
+### Sepoliaのnonce取得
+GET {{baseUrl}}/sponsorship/nonce/{{sepolia_chainId}}/{{gasTankAddress}}
+Content-Type: application/json
+
+###############################################################################
+# 3. トランザクションレシート（受領証）の取得
+###############################################################################
+#
+# 説明: スポンサーシップトランザクションの実行結果を取得
+# - トランザクションステータス（成功/失敗）
+# - ガス使用量
+# - イベントログ
+# - ブロック情報
+#
+# パラメータ:
+# - chainId: チェーンID
+# - hash: トランザクションハッシュ（0xから始まる64文字の16進数）
+#
+# レスポンス: Ethereumトランザクションレシートオブジェクト
+
+### Base Sepoliaのトランザクションレシート取得
+GET {{baseUrl}}/sponsorship/receipt/{{baseSepolia_chainId}}/{{transactionHash}}
+Content-Type: application/json
+
+###
+
+### Sepoliaのトランザクションレシート取得
+GET {{baseUrl}}/sponsorship/receipt/{{sepolia_chainId}}/{{transactionHash}}
+Content-Type: application/json
+
+###############################################################################
+# 4. スポンサーシップクォート（見積もり）への署名
+###############################################################################
+#
+# 説明: ガスタンクでスポンサーシップクォートに署名
+# - これがガススポンサーシップの中核エンドポイント
+# - クライアントから送られた見積もりに対して署名を行い、ガス代の支払いを承認
+#
+# パラメータ:
+# - chainId: チェーンID
+# - gasTankAddress: 使用するガスタンクのアドレス
+#
+# リクエストボディ: GetQuotePayload
+# レスポンス: 署名済みGetQuotePayload
+#
+# ⚠️ 注意: 
+# - リクエストボディは実際のトランザクション見積もりデータに置き換える必要があります
+# - 以下は構造の例です
+
+### Base Sepoliaでスポンサーシップに署名（サンプルペイロード）
+POST {{baseUrl}}/sponsorship/sign/{{baseSepolia_chainId}}/{{gasTankAddress}}
+Content-Type: application/json
+
+{
+  "sender": "0x1234567890123456789012345678901234567890",
+  "to": "0x0987654321098765432109876543210987654321",
+  "value": "0",
+  "data": "0x",
+  "operation": 0,
+  "targetTxGas": "100000",
+  "baseGas": "50000",
+  "gasPrice": "1000000000",
+  "tokenGasPriceFactor": "1000000",
+  "gasToken": "0x0000000000000000000000000000000000000000",
+  "refundReceiver": "0x0000000000000000000000000000000000000000",
+  "paymentInfo": {
+    "token": "0x...",
+    "amount": "100000",
+    "sponsor": "0x..."
+  },
+  "nonce": "1",
+  "validUntil": 0,
+  "validAfter": 0
+}
+
+###
+
+### Sepoliaでスポンサーシップに署名（サンプルペイロード）
+POST {{baseUrl}}/sponsorship/sign/{{sepolia_chainId}}/{{gasTankAddress}}
+Content-Type: application/json
+
+{
+  "sender": "0x1234567890123456789012345678901234567890",
+  "to": "0x0987654321098765432109876543210987654321",
+  "value": "0",
+  "data": "0x",
+  "operation": 0,
+  "targetTxGas": "100000",
+  "baseGas": "50000",
+  "gasPrice": "1000000000",
+  "tokenGasPriceFactor": "1000000",
+  "gasToken": "0x0000000000000000000000000000000000000000",
+  "refundReceiver": "0x0000000000000000000000000000000000000000",
+  "paymentInfo": {
+    "token": "0x...",
+    "amount": "100000",
+    "sponsor": "0x..."
+  },
+  "nonce": "1",
+  "validUntil": 0,
+  "validAfter": 0
+}
+
+###############################################################################
+# エラーケースのテスト例
+###############################################################################
+
+### 無効なチェーンID
+GET {{baseUrl}}/sponsorship/info
+Content-Type: application/json
+
+###
+
+### 無効なアドレス形式
+GET {{baseUrl}}/sponsorship/nonce/84532/invalid_address
+Content-Type: application/json
+
+###
+
+### 存在しないトランザクションハッシュ
+GET {{baseUrl}}/sponsorship/receipt/84532/0x0000000000000000000000000000000000000000000000000000000000000000
+Content-Type: application/json
+
+###
+
+### サポートされていないトークンでの署名試行
+POST {{baseUrl}}/sponsorship/sign/{{baseSepolia_chainId}}/{{gasTankAddress}}
+Content-Type: application/json
+
+{
+  "paymentInfo": {
+    "token": "0x0000000000000000000000000000000000000001",
+    "amount": "100000"
+  }
+}
+
+###############################################################################
+# カスタムヘッダー付きリクエストの例（認証用）
+###############################################################################
+#
+# 本番環境では、APIキーなどの認証情報をカスタムヘッダーで送信することを推奨
+
+### カスタムヘッダー付きリクエスト
+POST {{baseUrl}}/sponsorship/sign/{{baseSepolia_chainId}}/{{gasTankAddress}}
+Content-Type: application/json
+X-API-Key: your-api-key-here
+X-Project-Id: your-project-id-here
+
+{
+  "sender": "0x1234567890123456789012345678901234567890",
+  "paymentInfo": {
+    "token": "0x...",
+    "amount": "100000"
+  }
+}
+
+###

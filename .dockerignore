@@ -1,0 +1,57 @@
+# =====================
+# .dockerignore
+# =====================
+# Dockerイメージに含めないファイル・ディレクトリを指定
+# イメージサイズの削減とビルド速度の向上
+
+# Node modules（Dockerfile内でインストールするため）
+node_modules/
+
+# Gitファイル
+.git/
+.gitignore
+.github/
+
+# ログファイル
+*.log
+logs/
+
+# 環境変数ファイル（機密情報を含む可能性）
+.env
+.env.*
+!.env.example
+
+# IDEファイル
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Serenaファイル（開発ツール用）
+.serena/
+
+# OS固有ファイル
+.DS_Store
+Thumbs.db
+
+# ドキュメント・開発用ファイル
+README.md
+*.md
+!package.json
+
+# テスト関連
+test/
+tests/
+*.test.ts
+*.spec.ts
+
+# ビルド成果物（該当する場合）
+dist/
+build/
+*.tsbuildinfo
+
+# Docker関連（イメージ自体には不要）
+Dockerfile
+.dockerignore
+docker-compose.yml

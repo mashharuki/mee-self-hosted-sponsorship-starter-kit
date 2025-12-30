@@ -1,0 +1,215 @@
+{
+  // ==================== エディタ設定 ====================
+
+  // タブサイズ（2スペース）
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "editor.detectIndentation": false,
+
+  // 自動保存
+  "files.autoSave": "onFocusChange",
+
+  // 行の折り返し
+  "editor.wordWrap": "on",
+
+  // 末尾の空白を自動削除
+  "files.trimTrailingWhitespace": true,
+
+  // ファイル末尾に改行を追加
+  "files.insertFinalNewline": true,
+
+  // 末尾の改行を削除
+  "files.trimFinalNewlines": true,
+
+  // ==================== Biome設定 ====================
+
+  // デフォルトフォーマッターをBiomeに設定
+  "editor.defaultFormatter": "biomejs.biome",
+
+  // 保存時に自動フォーマット
+  "editor.formatOnSave": true,
+
+  // 貼り付け時に自動フォーマット
+  "editor.formatOnPaste": true,
+
+  // 保存時にBiomeで自動修正
+  "editor.codeActionsOnSave": {
+    "quickfix.biome": "explicit",
+    "source.organizeImports.biome": "explicit"
+  },
+
+  // TypeScript/JavaScript用のフォーマッター設定
+  "[typescript]": {
+    "editor.defaultFormatter": "biomejs.biome",
+    "editor.formatOnSave": true
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "biomejs.biome",
+    "editor.formatOnSave": true
+  },
+  "[json]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+
+  // ==================== ESLint設定（Biomeを使用するため無効化） ====================
+
+  // ESLintを無効化（Biomeを使用）
+  "eslint.enable": false,
+
+  // ==================== TypeScript設定 ====================
+
+  // TypeScriptの自動インポート更新
+  "typescript.updateImportsOnFileMove.enabled": "always",
+
+  // インレイヒント（型情報の表示）
+  "typescript.inlayHints.parameterNames.enabled": "literals",
+  "typescript.inlayHints.variableTypes.enabled": true,
+  "typescript.inlayHints.propertyDeclarationTypes.enabled": true,
+  "typescript.inlayHints.functionLikeReturnTypes.enabled": true,
+
+  // TypeScriptのサーベイを無効化
+  "typescript.surveys.enabled": false,
+
+  // ==================== ファイル関連設定 ====================
+
+  // ファイルエンコーディング
+  "files.encoding": "utf8",
+
+  // 改行コード
+  "files.eol": "\n",
+
+  // 除外するファイル・フォルダ
+  "files.exclude": {
+    "**/.git": true,
+    "**/.DS_Store": true,
+    "**/node_modules": true,
+    "**/.serena": true
+  },
+
+  // 検索から除外
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/bun.lock": true,
+    "**/.serena": true
+  },
+
+  // ファイル監視から除外（パフォーマンス向上）
+  "files.watcherExclude": {
+    "**/.git/objects/**": true,
+    "**/node_modules/**": true,
+    "**/.serena/**": true
+  },
+
+  // ==================== REST Client設定 ====================
+
+  // REST Clientのタイムアウト（30秒）
+  "rest-client.timeoutinmilliseconds": 30000,
+
+  // REST Clientのプレビューオプション
+  "rest-client.previewOption": "exchange",
+
+  // レスポンスのフォーマット
+  "rest-client.formatOnSave": true,
+
+  // ==================== Docker設定 ====================
+
+  // Dockerファイルの自動検証
+  "docker.enableDockerfileAutocomplete": true,
+
+  // ==================== YAML設定 ====================
+
+  // YAMLファイルのフォーマット
+  "[yaml]": {
+    "editor.defaultFormatter": "redhat.vscode-yaml",
+    "editor.formatOnSave": true
+  },
+
+  // OpenAPI/Swagger YAMLスキーマ
+  "yaml.schemas": {
+    "https://raw.githubusercontent.com/OAI/OpenAPI-Specification/main/schemas/v3.0/schema.json": [
+      "openapi.yaml",
+      "openapi.yml"
+    ]
+  },
+
+  // YAMLの検証を有効化
+  "yaml.validate": true,
+
+  // YAMLの自動補完を有効化
+  "yaml.completion": true,
+
+  // ==================== Git設定 ====================
+
+  // Git自動フェッチ
+  "git.autofetch": true,
+
+  // Git確認メッセージ
+  "git.confirmSync": false,
+
+  // ==================== ターミナル設定 ====================
+
+  // 統合ターミナルのフォントサイズ
+  "terminal.integrated.fontSize": 13,
+
+  // ターミナルでのコピー時に書式を保持しない
+  "terminal.integrated.copyOnSelection": true,
+
+  // ==================== Prettier設定（Biomeを使用するため無効化） ====================
+
+  // Prettierを無効化（Biomeを使用）
+  "prettier.enable": false,
+
+  // ==================== コメント設定 ====================
+
+  // Better Commentsの設定
+  "better-comments.tags": [
+    {
+      "tag": "!",
+      "color": "#FF2D00",
+      "strikethrough": false,
+      "underline": false,
+      "backgroundColor": "transparent",
+      "bold": false,
+      "italic": false
+    },
+    {
+      "tag": "?",
+      "color": "#3498DB",
+      "strikethrough": false,
+      "underline": false,
+      "backgroundColor": "transparent",
+      "bold": false,
+      "italic": false
+    },
+    {
+      "tag": "//",
+      "color": "#474747",
+      "strikethrough": true,
+      "underline": false,
+      "backgroundColor": "transparent",
+      "bold": false,
+      "italic": false
+    },
+    {
+      "tag": "todo",
+      "color": "#FF8C00",
+      "strikethrough": false,
+      "underline": false,
+      "backgroundColor": "transparent",
+      "bold": false,
+      "italic": false
+    },
+    {
+      "tag": "*",
+      "color": "#98C379",
+      "strikethrough": false,
+      "underline": false,
+      "backgroundColor": "transparent",
+      "bold": false,
+      "italic": false
+    }
+  ]
+}

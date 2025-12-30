@@ -1,0 +1,619 @@
+openapi: 3.0.3
+info:
+  title: MEE Self-Hosted Sponsorship API
+  description: |
+    # MEEスタック向けセルフホスティングマルチチェーンガススポンサーシップサービス
+    
+    このAPIは、Biconomy AbstractJSを使用して、複数のブロックチェーンネットワークで
+    ユーザーのガス代を代理支払い（スポンサー）するためのREST APIを提供します。
+    
+    ## 主な機能
+    - 🔗 マルチチェーン対応（Base Sepolia、Sepoliaなど）
+    - 💰 USDC等のステーブルコインでガス代を支払い
+    - 🔐 セキュアなガスタンク管理
+    - 📊 リアルタイムの残高確認
+    
+    ## 認証について
+    本番環境では、カスタムヘッダー（`X-API-Key`など）を使用した認証を実装することを推奨します。
+    
+    ## レート制限
+    デフォルトのMEE APIキーを使用する場合、レート制限が適用されます。
+    本番環境では独自のAPIキーの設定を推奨します。
+    
+    ## エラーハンドリング
+    すべてのエラーは以下の形式で返されます:
+    ```json
+    {
+      "errors": ["エラーメッセージ"]
+    }
+    ```
+    
+  version: 1.0.0
+  contact:
+    name: Biconomy
+    url: https://www.biconomy.io
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:3004/v1
+    description: ローカル開発環境
+  - url: https://your-domain.com/v1
+    description: 本番環境
+
+tags:
+  - name: Sponsorship
+    description: ガススポンサーシップ関連のエンドポイント
+  - name: Information
+    description: ガスタンク情報取得
+
+paths:
+  /sponsorship/info:
+    get:
+      tags:
+        - Information
+      summary: 全ガスタンク情報の取得
+      description: |
+        全チェーンの全ガスタンク情報を取得します。
+        
+        このエンドポイントは以下の情報を返します:
+        - 各チェーンのガスタンク一覧
+        - 各ガスタンクのトークン残高
+        - トークン情報（アドレス、小数点桁数）
+        
+        使用例:
+        - ガスタンクの残高監視
+        - 利用可能なチェーンの確認
+        - フロントエンドでの残高表示
+      operationId: getGasTankInfo
+      responses:
+        '200':
+          description: ガスタンク情報の取得に成功
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/GasTankInfo'
+              example:
+                "84532":
+                  - chainId: 84532
+                    token:
+                      address: "0x036CbD53842c5426634e7929541eC2318f3dCF7e"
+                      balance: "5.0"
+                      decimals: 6
+                    gasTankAddress: "0x1234567890123456789012345678901234567890"
+                "11155111":
+                  - chainId: 11155111
+                    token:
+                      address: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238"
+                      balance: "5.0"
+                      decimals: 6
+                    gasTankAddress: "0x0987654321098765432109876543210987654321"
+        '400':
+          description: リクエストエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /sponsorship/nonce/{chainId}/{gasTankAddress}:
+    get:
+      tags:
+        - Sponsorship
+      summary: ガスタンクのNonce取得
+      description: |
+        特定のガスタンクアカウントの現在のnonce（トランザクション番号）を取得します。
+        
+        Nonceは以下の用途で使用されます:
+        - トランザクションの順序管理
+        - リプレイ攻撃の防止
+        - トランザクションの一意性確保
+        
+        各トランザクションには一意のnonceが必要です。
+      operationId: getGasTankNonce
+      parameters:
+        - name: chainId
+          in: path
+          required: true
+          description: |
+            ブロックチェーンのチェーンID
+            
+            主要なチェーンID:
+            - `84532`: Base Sepolia (テストネット)
+            - `11155111`: Sepolia (テストネット)
+            - `8453`: Base (メインネット)
+            - `1`: Ethereum Mainnet
+          schema:
+            type: integer
+            format: int64
+          example: 84532
+        - name: gasTankAddress
+          in: path
+          required: true
+          description: ガスタンクのコントラクトアドレス（0xから始まる42文字の16進数）
+          schema:
+            type: string
+            pattern: '^0x[a-fA-F0-9]{40}$'
+          example: "0x1234567890123456789012345678901234567890"
+      responses:
+        '200':
+          description: Nonceの取得に成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NonceResponse'
+              example:
+                nonceKey: "123"
+                nonce: "5"
+        '400':
+          description: 無効なパラメータまたはガスタンクが見つからない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                invalidChainId:
+                  summary: 無効なチェーンID
+                  value:
+                    errors: ["Invalid chain id"]
+                invalidAddress:
+                  summary: 無効なアドレス
+                  value:
+                    errors: ["Invalid gas tank address"]
+                notFound:
+                  summary: ガスタンクが見つからない
+                  value:
+                    errors: ["Gas tank not found"]
+
+  /sponsorship/receipt/{chainId}/{hash}:
+    get:
+      tags:
+        - Sponsorship
+      summary: トランザクションレシートの取得
+      description: |
+        スポンサーシップトランザクションの実行結果（レシート）を取得します。
+        
+        レシートには以下の情報が含まれます:
+        - トランザクションステータス（成功/失敗）
+        - 実際に使用されたガス量
+        - イベントログ
+        - ブロック情報
+        - コントラクトアドレス（デプロイの場合）
+        
+        使用例:
+        - トランザクションの実行確認
+        - ガス使用量の分析
+        - イベントログの解析
+      operationId: getTransactionReceipt
+      parameters:
+        - name: chainId
+          in: path
+          required: true
+          description: ブロックチェーンのチェーンID
+          schema:
+            type: integer
+            format: int64
+          example: 84532
+        - name: hash
+          in: path
+          required: true
+          description: トランザクションハッシュ（0xから始まる66文字の16進数）
+          schema:
+            type: string
+            pattern: '^0x[a-fA-F0-9]{64}$'
+          example: "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
+      responses:
+        '200':
+          description: トランザクションレシートの取得に成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionReceipt'
+        '400':
+          description: 無効なパラメータまたはトランザクションが見つからない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                invalidChainId:
+                  summary: 無効なチェーンID
+                  value:
+                    errors: ["Invalid chain id"]
+                invalidHash:
+                  summary: 無効なトランザクションハッシュ
+                  value:
+                    errors: ["Invalid transaction hash"]
+                noGasTank:
+                  summary: ガスタンクが見つからない
+                  value:
+                    errors: ["No gas tanks found"]
+
+  /sponsorship/sign/{chainId}/{gasTankAddress}:
+    post:
+      tags:
+        - Sponsorship
+      summary: スポンサーシップクォートへの署名
+      description: |
+        ガスタンクでスポンサーシップクォート（見積もり）に署名します。
+        
+        **これがガススポンサーシップの中核エンドポイントです。**
+        
+        処理フロー:
+        1. クライアントがトランザクション見積もりを送信
+        2. サーバーがバリデーション（トークンタイプ、認証など）
+        3. ガスタンクアカウントが署名を実行
+        4. 署名済み見積もりを返却
+        5. クライアントが署名済み見積もりでトランザクションを実行
+        
+        ⚠️ セキュリティ注意事項:
+        - 本番環境では認証・認可ロジックの実装が必須
+        - 月間支出上限のチェック
+        - トランザクション毎の最大支出チェック
+        - レート制限の適用
+        - ホワイトリスト/ブラックリストの確認
+        
+        使用例:
+        - ユーザーのガスレストランザクション
+        - バッチトランザクションのスポンサーシップ
+        - スマートコントラクトウォレットの操作
+      operationId: signSponsorship
+      parameters:
+        - name: chainId
+          in: path
+          required: true
+          description: ブロックチェーンのチェーンID
+          schema:
+            type: integer
+            format: int64
+          example: 84532
+        - name: gasTankAddress
+          in: path
+          required: true
+          description: 使用するガスタンクのアドレス
+          schema:
+            type: string
+            pattern: '^0x[a-fA-F0-9]{40}$'
+          example: "0x1234567890123456789012345678901234567890"
+        - name: X-API-Key
+          in: header
+          required: false
+          description: |
+            APIキー（本番環境では必須）
+            
+            カスタムヘッダーを使用した認証の例。
+            実際の実装では、このヘッダーをチェックして
+            認証・認可を行うロジックを追加してください。
+          schema:
+            type: string
+          example: "your-api-key-here"
+        - name: X-Project-Id
+          in: header
+          required: false
+          description: プロジェクトID（オプション）
+          schema:
+            type: string
+          example: "your-project-id"
+      requestBody:
+        required: true
+        description: |
+          スポンサーシップクォート（トランザクション見積もり）
+          
+          このペイロードには、実行するトランザクションの詳細情報が含まれます。
+          通常、クライアント側のSDKが自動的に生成します。
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GetQuotePayload'
+            example:
+              sender: "0x1234567890123456789012345678901234567890"
+              to: "0x0987654321098765432109876543210987654321"
+              value: "0"
+              data: "0x"
+              operation: 0
+              targetTxGas: "100000"
+              baseGas: "50000"
+              gasPrice: "1000000000"
+              tokenGasPriceFactor: "1000000"
+              gasToken: "0x0000000000000000000000000000000000000000"
+              refundReceiver: "0x0000000000000000000000000000000000000000"
+              paymentInfo:
+                token: "0x036CbD53842c5426634e7929541eC2318f3dCF7e"
+                amount: "100000"
+                sponsor: "0x1234567890123456789012345678901234567890"
+              nonce: "1"
+              validUntil: 0
+              validAfter: 0
+      responses:
+        '200':
+          description: 署名に成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetQuotePayload'
+              example:
+                sender: "0x1234567890123456789012345678901234567890"
+                to: "0x0987654321098765432109876543210987654321"
+                value: "0"
+                data: "0x"
+                operation: 0
+                targetTxGas: "100000"
+                baseGas: "50000"
+                gasPrice: "1000000000"
+                tokenGasPriceFactor: "1000000"
+                gasToken: "0x0000000000000000000000000000000000000000"
+                refundReceiver: "0x0000000000000000000000000000000000000000"
+                paymentInfo:
+                  token: "0x036CbD53842c5426634e7929541eC2318f3dCF7e"
+                  amount: "100000"
+                  sponsor: "0x1234567890123456789012345678901234567890"
+                nonce: "1"
+                validUntil: 0
+                validAfter: 0
+                signature: "0x..."
+        '400':
+          description: 署名エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                invalidChainId:
+                  summary: 無効なチェーンID
+                  value:
+                    errors: ["Invalid chain id"]
+                invalidAddress:
+                  summary: 無効なガスタンクアドレス
+                  value:
+                    errors: ["Invalid gas tank address"]
+                notFound:
+                  summary: ガスタンクが見つからない
+                  value:
+                    errors: ["Gas tank not found"]
+                unsupportedToken:
+                  summary: サポートされていないトークン
+                  value:
+                    errors: ["Sponsorship token not supported."]
+
+components:
+  schemas:
+    GasTankInfo:
+      type: object
+      description: ガスタンク情報
+      required:
+        - chainId
+        - token
+        - gasTankAddress
+      properties:
+        chainId:
+          type: integer
+          format: int64
+          description: チェーンID
+          example: 84532
+        token:
+          type: object
+          description: トークン情報
+          required:
+            - address
+            - balance
+            - decimals
+          properties:
+            address:
+              type: string
+              pattern: '^0x[a-fA-F0-9]{40}$'
+              description: トークンのコントラクトアドレス
+              example: "0x036CbD53842c5426634e7929541eC2318f3dCF7e"
+            balance:
+              type: string
+              description: トークン残高（フォーマット済み文字列）
+              example: "5.0"
+            decimals:
+              type: integer
+              description: トークンの小数点桁数
+              example: 6
+        gasTankAddress:
+          type: string
+          pattern: '^0x[a-fA-F0-9]{40}$'
+          description: ガスタンクのコントラクトアドレス
+          example: "0x1234567890123456789012345678901234567890"
+
+    NonceResponse:
+      type: object
+      description: Nonce情報
+      required:
+        - nonceKey
+        - nonce
+      properties:
+        nonceKey:
+          type: string
+          description: Nonceキー（文字列形式）
+          example: "123"
+        nonce:
+          type: string
+          description: 現在のNonce値（文字列形式）
+          example: "5"
+
+    TransactionReceipt:
+      type: object
+      description: |
+        Ethereumトランザクションレシート
+        
+        標準的なEthereumトランザクションレシートオブジェクト。
+        詳細は [Ethereum JSON-RPC仕様](https://ethereum.org/en/developers/docs/apis/json-rpc/#eth_gettransactionreceipt) を参照。
+      properties:
+        transactionHash:
+          type: string
+          description: トランザクションハッシュ
+          example: "0xabcdef..."
+        transactionIndex:
+          type: string
+          description: ブロック内のトランザクションインデックス
+        blockHash:
+          type: string
+          description: ブロックハッシュ
+        blockNumber:
+          type: string
+          description: ブロック番号
+        from:
+          type: string
+          description: 送信者アドレス
+        to:
+          type: string
+          description: 受信者アドレス
+          nullable: true
+        cumulativeGasUsed:
+          type: string
+          description: ブロック内の累積ガス使用量
+        gasUsed:
+          type: string
+          description: このトランザクションで使用されたガス量
+        contractAddress:
+          type: string
+          description: デプロイされたコントラクトアドレス（該当する場合）
+          nullable: true
+        logs:
+          type: array
+          description: イベントログの配列
+          items:
+            type: object
+        status:
+          type: string
+          description: |
+            トランザクションステータス
+            - "0x1": 成功
+            - "0x0": 失敗
+
+    GetQuotePayload:
+      type: object
+      description: |
+        スポンサーシップクォートペイロード
+        
+        Biconomy AbstractJSが使用するトランザクション見積もりの形式。
+      required:
+        - sender
+        - to
+        - value
+        - data
+        - paymentInfo
+      properties:
+        sender:
+          type: string
+          pattern: '^0x[a-fA-F0-9]{40}$'
+          description: トランザクション送信者のアドレス
+          example: "0x1234567890123456789012345678901234567890"
+        to:
+          type: string
+          pattern: '^0x[a-fA-F0-9]{40}$'
+          description: トランザクション受信者のアドレス
+          example: "0x0987654321098765432109876543210987654321"
+        value:
+          type: string
+          description: 送信するETH量（Wei単位の文字列）
+          example: "0"
+        data:
+          type: string
+          description: トランザクションデータ（コントラクト関数呼び出し等）
+          example: "0x"
+        operation:
+          type: integer
+          description: |
+            オペレーションタイプ
+            - 0: Call
+            - 1: DelegateCall
+          example: 0
+        targetTxGas:
+          type: string
+          description: ターゲットトランザクションのガスリミット
+          example: "100000"
+        baseGas:
+          type: string
+          description: ベースガス量
+          example: "50000"
+        gasPrice:
+          type: string
+          description: ガス価格（Wei単位）
+          example: "1000000000"
+        tokenGasPriceFactor:
+          type: string
+          description: トークンガス価格の係数
+          example: "1000000"
+        gasToken:
+          type: string
+          description: ガストークンアドレス
+          example: "0x0000000000000000000000000000000000000000"
+        refundReceiver:
+          type: string
+          description: リファンド受取人アドレス
+          example: "0x0000000000000000000000000000000000000000"
+        paymentInfo:
+          type: object
+          description: 支払い情報
+          required:
+            - token
+            - amount
+          properties:
+            token:
+              type: string
+              pattern: '^0x[a-fA-F0-9]{40}$'
+              description: 支払いトークンのアドレス（USDC等）
+              example: "0x036CbD53842c5426634e7929541eC2318f3dCF7e"
+            amount:
+              type: string
+              description: 支払い金額（トークンの最小単位）
+              example: "100000"
+            sponsor:
+              type: string
+              pattern: '^0x[a-fA-F0-9]{40}$'
+              description: スポンサーアドレス
+              example: "0x1234567890123456789012345678901234567890"
+        nonce:
+          type: string
+          description: トランザクションNonce
+          example: "1"
+        validUntil:
+          type: integer
+          description: 有効期限（Unixタイムスタンプ、0は無制限）
+          example: 0
+        validAfter:
+          type: integer
+          description: 有効開始時刻（Unixタイムスタンプ、0は即時）
+          example: 0
+        signature:
+          type: string
+          description: |
+            署名（レスポンスのみ）
+            
+            ガスタンクによる署名。この署名により、
+            ガスタンクがトランザクションのガス代を支払うことを証明します。
+          example: "0x1234567890abcdef..."
+
+    Error:
+      type: object
+      description: エラーレスポンス
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          description: エラーメッセージの配列
+          items:
+            type: string
+          example: ["Invalid chain id"]
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: |
+        APIキー認証（本番環境推奨）
+        
+        カスタムヘッダー `X-API-Key` でAPIキーを送信します。
+        実装例では、このキーを検証するロジックを追加する必要があります。
+
+security:
+  - ApiKeyAuth: []

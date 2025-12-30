@@ -1,0 +1,81 @@
+{
+  // ==================== プロジェクト推奨拡張機能 ====================
+  // このファイルは、プロジェクトで使用を推奨する VS Code 拡張機能を定義します
+  // VS Code を開くと、インストールが推奨される拡張機能が通知されます
+
+  "recommendations": [
+    // ==================== 必須拡張機能 ====================
+
+    // REST Client - sample.http ファイルでAPIテストを実行
+    "humao.rest-client",
+
+    // Docker - Dockerfile と docker-compose.yml のサポート
+    "ms-azuretools.vscode-docker",
+
+    // YAML - openapi.yaml の編集サポート
+    "redhat.vscode-yaml",
+
+    // ==================== TypeScript/JavaScript 開発 ====================
+
+    // Biome - 高速なリンター・フォーマッター（ESLint + Prettier の代替）
+    "biomejs.biome",
+
+    // Error Lens - エラーと警告をインライン表示
+    "usernamehw.errorlens",
+
+    // ==================== API開発 ====================
+
+    // OpenAPI (Swagger) Editor - openapi.yaml の編集とプレビュー
+    "42crunch.vscode-openapi",
+
+    // Thunder Client - 軽量なAPIクライアント（REST Clientの代替）
+    "rangav.vscode-thunder-client",
+
+    // ==================== Git/GitHub ====================
+
+    // GitLens - Git履歴の可視化と高度なGit機能
+    "eamodio.gitlens",
+
+    // GitHub Pull Requests - GitHub統合
+    "github.vscode-pull-request-github",
+
+    // ==================== ユーティリティ ====================
+
+    // Path Intellisense - ファイルパスの自動補完
+    "christian-kohler.path-intellisense",
+
+    // DotENV - .env ファイルのシンタックスハイライト
+    "mikestead.dotenv",
+
+    // Better Comments - コメントの色分け
+    "aaron-bond.better-comments",
+
+    // indent-rainbow - インデントを色分けして見やすく
+    "oderwat.indent-rainbow",
+
+    // ==================== マークダウン ====================
+
+    // Markdown All in One - README.md などの編集サポート
+    "yzhang.markdown-all-in-one",
+
+    // ==================== コード品質 ====================
+
+    // Code Spell Checker - スペルチェック（日本語にも対応可能）
+    "streetsidesoftware.code-spell-checker",
+
+    // TODO Highlight - TODO/FIXME などをハイライト
+    "wayou.vscode-todo-highlight"
+  ],
+
+  // ==================== 非推奨拡張機能 ====================
+  // このプロジェクトでは使用しない拡張機能（競合を避けるため）
+
+  "unwantedRecommendations": [
+    // TSLint は非推奨
+    "ms-vscode.vscode-typescript-tslint-plugin",
+    // ESLint は Biome を使用するため不要
+    "dbaeumer.vscode-eslint",
+    // Prettier は Biome を使用するため不要
+    "esbenp.prettier-vscode"
+  ]
+}
