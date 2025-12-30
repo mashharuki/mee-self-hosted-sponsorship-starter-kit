@@ -22,7 +22,7 @@
 @sepolia_chainId = 11155111
 
 # ⚠️ 以下の値は実際の値に置き換えてください
-@gasTankAddress = 0x0000006087310897e0bffcb3f0ed3704f7146852
+@gasTankAddress = 0xaf5620b8F3f567c2Ad0e0247C5A5483A7ED5D272
 @transactionHash = 0x3cd2a38ac5219da97cd813f00686468ed413f1fda3422c4dc321a7f20e5cc421
 
 ###############################################################################

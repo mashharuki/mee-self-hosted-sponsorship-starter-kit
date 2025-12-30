@@ -492,8 +492,11 @@ curl http://localhost:3004/v1/sponsorship/nonce/84532/0xYourGasTankAddress
 ### 🛠️ 開発コマンド
 
 ```bash
-# 開発サーバー起動（ホットリロード）
+# 開発サーバー起動（ホットリロード)
 bun run dev
+
+# ガスタンク管理ユーティリティスクリプトを実行
+bun run gas-tank
 
 # コードのリント
 bun run lint
@@ -544,6 +547,121 @@ open http://localhost:8080
 詳細は `openapi.yaml` または `sample.http` を参照してください。
 
 ---
+
+## 🛠️ ガスタンク管理ユーティリティ
+
+プロジェクトには、ガスタンクの作成、デプロイ、資金管理を行うための独立したスクリプトが含まれています。
+
+### 🚀 クイックスタート
+
+#### 1️⃣ ガスタンクを作成する
+
+```bash
+# ガスタンクを作成してデプロイ（初期資金0.1 USDC）
+bun run create-gas-tank
+```
+
+#### 2️⃣ ガスタンクに資金を入れる
+
+```bash
+# デフォルト: 1.0 USDC を入金
+bun run deposit-gas-tank
+
+# 入金額を指定
+DEPOSIT_AMOUNT=5.0 bun run deposit-gas-tank
+```
+
+#### 3️⃣ ガスタンクから資金を引き出す
+
+```bash
+# デフォルト: 0.5 USDC を引き出し（EOAアドレスへ）
+bun run withdraw-gas-tank
+
+# 引き出し額を指定
+WITHDRAW_AMOUNT=2.0 bun run withdraw-gas-tank
+
+# 全額引き出し
+WITHDRAW_ALL=true bun run withdraw-gas-tank
+
+# 受取アドレスを指定
+RECIPIENT_ADDRESS=0x... bun run withdraw-gas-tank
+```
+
+### 📋 スクリプト一覧
+
+| スクリプト | コマンド | 説明 |
+|-----------|---------|------|
+| **作成** | `bun run create-gas-tank` | ガスタンクを作成・デプロイ |
+| **入金** | `bun run deposit-gas-tank` | ガスタンクに資金を入金 |
+| **引き出し** | `bun run withdraw-gas-tank` | ガスタンクから資金を引き出し |
+
+### ⚙️ 環境変数での設定
+
+#### 入金スクリプト
+
+```bash
+# 入金額を設定（デフォルト: 1.0 USDC）
+DEPOSIT_AMOUNT=5.0 bun run deposit-gas-tank
+```
+
+#### 引き出しスクリプト
+
+```bash
+# 引き出し額を設定（デフォルト: 0.5 USDC）
+WITHDRAW_AMOUNT=2.0 bun run withdraw-gas-tank
+
+# 全額引き出し
+WITHDRAW_ALL=true bun run withdraw-gas-tank
+
+# 受取アドレスを指定（デフォルト: EOAアドレス）
+RECIPIENT_ADDRESS=0xYourAddress bun run withdraw-gas-tank
+
+# 複数の設定を組み合わせ
+WITHDRAW_AMOUNT=1.5 RECIPIENT_ADDRESS=0x... bun run withdraw-gas-tank
+```
+
+### 💻 使用例のフロー
+
+```bash
+# 1. ガスタンクを作成（0.1 USDC でデプロイ）
+bun run create-gas-tank
+
+# 2. さらに5 USDCを入金
+DEPOSIT_AMOUNT=5.0 bun run deposit-gas-tank
+
+# 3. 必要に応じて2 USDCを引き出し
+WITHDRAW_AMOUNT=2.0 bun run withdraw-gas-tank
+
+# 4. 全額を別のアドレスに引き出し
+WITHDRAW_ALL=true RECIPIENT_ADDRESS=0x... bun run withdraw-gas-tank
+```
+
+### 📊 スクリプト詳細
+
+#### create-gas-tank.ts
+- ガスタンクアカウントを作成
+- デプロイ状態を確認
+- 未デプロイの場合は自動デプロイ（0.1 USDC）
+- 既にデプロイ済みの場合は情報を表示
+
+#### deposit-gas-tank.ts
+- EOAからガスタンクへトークンを転送
+- トランザクションの完了を待機
+- 入金前後の残高を表示
+- トランザクションハッシュを記録
+
+#### withdraw-gas-tank.ts
+- ガスタンクから指定アドレスへ引き出し
+- 全額引き出しモードをサポート
+- 3ブロックの確認を待機
+- 引き出し前後の残高を表示
+
+### 🔐 セキュリティ注意事項
+
+- スクリプト実行には `.env` ファイルに `PRIVATE_KEY` と `MEE_API_KEY` の設定が必要です
+- 本番環境での実行前に、テストネットで十分にテストしてください
+- 引き出し操作は不可逆的です。実行前にアドレスと金額を必ず確認してください
+- 秘密鍵は絶対に公開しないでください
 
 ## 🔒 セキュリティのベストプラクティス
 

@@ -5,6 +5,10 @@
   "private": true,
   "scripts": {
     "dev": "bun run src/index.ts",
+    "gas-tank": "bun run src/gas-tank-utils.ts",
+    "create-gas-tank": "bun run src/gas-tank/create-gas-tank.ts",
+    "deposit-gas-tank": "bun run src/gas-tank/deposit-gas-tank.ts",
+    "withdraw-gas-tank": "bun run src/gas-tank/withdraw-gas-tank.ts",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
